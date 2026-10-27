@@ -308,7 +308,7 @@
   function fmtFecha(fecha) {
     if (!fecha) return '';
     var p = fecha.split('-');
-    return p[2] + '/' + p[1] + '/' + p[0].slice(2);
+    return p[2] + '/' + p[1] + '/' + p[0]; // Muestra el año completo
   }
   function fmtMesCorto(mes) {
     var MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1003,15 +1003,22 @@
   function parsearResumen(texto, filename) {
     var consumos = [];
     var lineas = texto.split('\n');
-    var fechaRegex = /^(\d{2})-(\d{2})-(\d{2})\s+(.*)$/;
+    
+    // Mejora: \s* permite que no haya espacio entre la fecha y el comercio
+    var fechaRegex = /^(\d{2})-(\d{2})-(\d{2})\s*(.*)$/; 
+
     var fechasHeader = texto.match(/(\d{2})-(\w{3})-(\d{2})/g) || [];
     var fechaCierre = null, fechaVencimiento = null;
+
     var totalMatch = texto.match(/TOTAL\s+A\s+PAGAR\s+([\d.,]+)/);
     var totalAPagar = totalMatch ? parseFloat(totalMatch[1].replace(/\./g, '').replace(',', '.')) : null;
+
     var saldoMatch = texto.match(/SALDO\s+ANTERIOR\s+([\d.,]+)/);
     var saldoAnterior = saldoMatch ? parseFloat(saldoMatch[1].replace(/\./g, '').replace(',', '.')) : null;
+
     var pagoMatch = texto.match(/SU\s+PAGO\s+EN\s+PESOS\s+(-?[\d.,]+)/);
     var pagoAnterior = pagoMatch ? parseFloat(pagoMatch[1].replace(/\./g, '').replace(',', '.')) : null;
+
     function extraerMonto(labelRegex) {
       var m = texto.match(labelRegex);
       return m ? parseFloat(m[1].replace(/\./g, '').replace(',', '.')) : null;
@@ -1023,6 +1030,7 @@
     var comisionMantCuenta = extraerMonto(/COM\s+MANT\s+CTA[^-\d]*([\d.,]+)/i);
     var pagoMinimo = extraerMonto(/PAGO\s+M[ÍI]NIMO[^-\d]*\$?\s*([\d.,]+)/i);
     var limite = extraerMonto(/L[ÍI]MITES[^]*?compras[^]*?\$?\s*([\d.,]+)/i);
+
     var mesNum = {'Ene':'01','Feb':'02','Mar':'03','Abr':'04','May':'05','Jun':'06',
                   'Jul':'07','Ago':'08','Sep':'09','Oct':'10','Nov':'11','Dic':'12'};
     var cierreMatch = texto.match(/(\d{2})-(\w{3})-(\d{2})/g);
@@ -1038,37 +1046,52 @@
         }
       }
     }
+
     var mesResumen = null;
     if (fechaCierre) {
       mesResumen = fechaCierre.slice(0, 7);
     }
+
     lineas.forEach(function (linea) {
       linea = linea.trim();
       var m = linea.match(fechaRegex);
       if (!m) return;
+
       var dia = m[1], mes = m[2], anio = m[3];
       var resto = m[4].trim();
-      if (/^(IMPUESTO|INTERESES|PUNIT|DB\s+IVA|COM\s+MANT)/i.test(resto)) return;
-      if (/^SU\s+PAGO/i.test(resto)) return;
-      if (/^TARJETA/i.test(resto)) return;
+
+      if (/^(IMPUESTO|INTERESES|PUNIT|DB\s+IVA|COM\s+MANT|SALDO|SU\s+PAGO|TARJETA)/i.test(resto)) return;
+
       var importeMatch = resto.match(/(-?[\d.]+,\d{2})\s*$/);
       if (!importeMatch) return;
+
       var importeStr = importeMatch[1];
       var importe = parseFloat(importeStr.replace(/\./g, '').replace(',', '.'));
+
       var sinImporte = resto.slice(0, resto.length - importeStr.length).trim();
+
       var cuotaMatch = sinImporte.match(/(\d{2}\/\d{2})/);
       var cuota = cuotaMatch ? cuotaMatch[1] : '';
-      var compMatch = sinImporte.match(/\b(\d{6})\b\s*$/);
+
+      // Mejora: Busca 6 dígitos cerca del final, ignorando puntos o asteriscos pegados
+      var compMatch = sinImporte.match(/(\d{6})\D*$/);
       var comprobante = compMatch ? compMatch[1] : '';
+
       var comercio = sinImporte
         .replace(/^\*\s*/, '')
-        .replace(/\d{2}\/\d{2}/, '')
-        .replace(/\b\d{6}\b\s*$/, '')
+        .replace(cuotaMatch ? cuotaMatch[0] : '', '')
+        .replace(compMatch ? compMatch[1] : '', '')
         .replace(/\b\d{10,}\b/g, '')
         .replace(/\s+/g, ' ')
         .trim();
+
+      // Limpieza final de puntos o asteriscos residuales
+      comercio = comercio.replace(/[\.,\*]$/, '').trim();
+
       if (!comercio) return;
+
       var fechaISO = '20' + anio + '-' + mes + '-' + dia;
+
       var consumo = {
         fecha: fechaISO,
         comercio: comercio,
@@ -1076,15 +1099,19 @@
         comprobante: comprobante,
         pesos: importe
       };
+
       if (/^(OSSACRA|CAMI\s+SALUD|K\s+MONET|MONET|RIO\s+URUGUAY|INTERNET\s+MONET)/i.test(comercio)) {
         consumo.esDebitoFijo = true;
       }
       if (importe < 0) {
         consumo.esDevolucion = true;
       }
+
       consumos.push(consumo);
     });
+
     if (!consumos.length && !totalAPagar) return null;
+
     if (!mesResumen && consumos.length) {
       var fechas = consumos.map(function (c) { return c.fecha; }).sort();
       var ultima = fechas[fechas.length - 1];
@@ -1093,6 +1120,7 @@
       if (m > 12) { m = 1; y++; }
       mesResumen = y + '-' + String(m).padStart(2, '0');
     }
+
     return {
       id: 'r' + mesResumen,
       mes: mesResumen,
