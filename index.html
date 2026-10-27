@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tarjeta VISA — Resumen mensual</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --text:#111827; --muted:#6b7280;
+    --line:#e5e7eb; --line-strong:#d1d5db; --accent:#1e40af; --accent-light:#dbeafe;
+    --ok:#16a34a; --ok-light:#dcfce7; --warn:#f59e0b; --warn-light:#fef3c7;
+    --danger:#dc2626; --danger-light:#fee2e2;
+    --debito:#7c3aed; --debito-light:#f3e8ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--text);line-height:1.4;-webkit-font-smoothing:antialiased;font-size:14px}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;
+         background:#fff;padding:14px 18px;border-radius:10px;border:1px solid var(--line)}
+  .header-left{display:flex;flex-direction:column;gap:2px}
+  h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.01em}
+  .subtitle{font-size:12px;color:var(--muted)}
+  .header-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  input,select,button{font:inherit}
+  .btn{background:#fff;border:1px solid var(--line-strong);color:#374151;padding:8px 14px;
+       border-radius:8px;cursor:pointer;font-weight:500;font-size:13px}
+  .btn:hover{background:#f9fafb}
+  .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn-primary:hover{background:#1e3a8a}
+  .btn-sm{padding:6px 10px;font-size:12px}
+  .hero{background:linear-gradient(135deg,#1e3a8a,#1e40af);color:#fff;border-radius:12px;
+        padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;
+        gap:20px;flex-wrap:wrap;align-items:center}
+  .hero-left{flex:1;min-width:240px}
+  .hero-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#bfdbfe;font-weight:600}
+  .hero-amount{font-size:36px;font-weight:700;letter-spacing:-.02em;margin:4px 0 6px;line-height:1}
+  .hero-date{font-size:13px;color:#dbeafe}
+  .hero-right{display:flex;gap:24px;flex-wrap:wrap}
+  .hero-stat{display:flex;flex-direction:column;gap:2px}
+  .hero-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#bfdbfe}
+  .hero-stat-value{font-size:18px;font-weight:600;color:#fff}
+  .hero-stat-value.danger{color:#fca5a5}
+  .hero-stat-value.ok{color:#86efac}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{background:#fff;border:1px solid var(--line);padding:8px 14px;border-radius:8px;
+       cursor:pointer;font-size:13px;font-weight:500;color:#374151;display:flex;align-items:center;gap:6px}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .tab.paid{border-color:var(--ok);color:var(--ok)}
+  .tab.paid.active{background:var(--ok);color:#fff}
+  .tab.paid::after{content:"✓";font-weight:700}
+  .tab.pending{border-color:var(--warn);color:var(--warn)}
+  .tab.pending.active{background:var(--warn);color:#fff}
+  .tab.pending::after{content:"●";font-size:10px}
+  .banner-resumen{display:none;padding:10px 16px;border-radius:8px;margin-bottom:14px;
+                  font-size:13px;line-height:1.5}
+  .banner-resumen.show{display:block}
+  .banner-resumen.pagado{background:var(--ok-light);border:1px solid var(--ok);color:#14532d}
+  .banner-resumen.pendiente-no-hero{background:var(--warn-light);border:1px solid var(--warn);color:#78350f}
+  .banner-resumen strong{font-weight:700}
+  .resumen-info{background:#fff;border:1px solid var(--line);border-radius:10px;
+                padding:14px 18px;margin-bottom:14px;display:grid;
+                grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
+  .info-cell{display:flex;flex-direction:column;gap:2px}
+  .info-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+  .info-value{font-size:14px;font-weight:600;color:var(--text)}
+  .info-value.success{color:var(--ok)}
+  .info-value.danger{color:var(--danger)}
+  .info-value.warning{color:var(--warn)}
+  .table-wrap{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+  .table-header{padding:12px 18px;background:#f9fafb;border-bottom:1px solid var(--line);
+                display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .table-title{font-size:14px;font-weight:700;color:var(--text)}
+  .table-meta{font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:#f3f4f6;padding:8px 10px;text-align:left;font-weight:600;color:#374151;
+           border-bottom:1px solid var(--line-strong);font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+           position:sticky;top:0}
+  thead th.num{text-align:right}
+  thead th.center{text-align:center}
+  tbody td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover{background:#f9fafb}
+  tbody tr.debito{background:var(--debito-light)}
+  tbody tr.debito:hover{background:#e9d5ff}
+  tbody tr.devolucion{background:var(--danger-light)}
+  tbody tr.devolucion:hover{background:#fecaca}
+  tbody tr.total{background:#fef3c7;font-weight:700}
+  tbody tr.total:hover{background:#fde68a}
+  tbody tr.total-subtotal{background:#f9fafb;font-weight:600}
+  tbody tr.total-subtotal:hover{background:#f3f4f6}
+  tbody tr.total-detalle{background:#fff;font-size:12px;color:var(--muted)}
+  tbody tr.total-detalle:hover{background:#f9fafb}
+  tbody tr.total-detalle td.num{color:var(--muted)}
+  tbody tr.total-final{background:#fef3c7;font-weight:700;border-top:2px solid var(--warn)}
+  tbody tr.total-final:hover{background:#fde68a}
+  tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody td.center{text-align:center}
+  tbody td.negative{color:var(--danger);font-weight:600}
+  .badge-cuota{display:inline-block;background:#e0e7ff;color:#3730a3;padding:1px 6px;
+               border-radius:4px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+  .badge-cuota.first{background:#dbeafe;color:#1e40af}
+  .badge-cuota.last{background:#fef3c7;color:#92400e}
+  .badge-debito{display:inline-block;background:var(--debito);color:#fff;padding:1px 6px;
+                border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .badge-devolucion{display:inline-block;background:var(--danger);color:#fff;padding:1px 6px;
+                    border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .comercio{font-weight:500}
+  .vencimientos{background:#fff;border:1px solid var(--line);border-radius:10px;
+                padding:14px 18px;margin-bottom:14px}
+  .venc-title{font-size:14px;font-weight:700;margin:0 0 10px}
+  .venc-list{display:flex;gap:12px;flex-wrap:wrap}
+  .venc-item{flex:1;min-width:140px;background:#f9fafb;border:1px solid var(--line);
+             border-radius:8px;padding:10px 12px}
+  .venc-item.urgent{border-color:var(--danger);background:var(--danger-light)}
+  .venc-item.soon{border-color:var(--warn);background:var(--warn-light)}
+  .venc-mes{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+  .venc-monto{font-size:18px;font-weight:700;margin:2px 0}
+  .venc-fecha{font-size:11px;color:var(--muted)}
+  .proyeccion{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:14px}
+  .proy-title{font-size:14px;font-weight:700;margin:0 0 4px}
+  .proy-subtitle{font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.4}
+  .proy-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .proy-card{background:#f9fafb;border:1px solid var(--line);border-radius:8px;padding:10px 8px;text-align:center}
+  .proy-card.pagado{background:var(--ok-light);border-color:var(--ok)}
+  .proy-card-mes{font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:600;letter-spacing:.05em}
+  .proy-card-monto{font-size:14px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+  .proy-card.pagado .proy-card-monto{color:var(--ok)}
+  .proy-total{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .proy-total strong{color:var(--text);font-size:15px}
+  details.form-section{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:14px}
+  details.form-section summary{padding:12px 18px;cursor:pointer;font-weight:600;color:var(--accent);
+                                list-style:none;font-size:14px}
+  details.form-section summary::-webkit-details-marker{display:none}
+  details.form-section summary::before{content:"+ ";font-weight:700}
+  details.form-section[open] summary::before{content:"− "}
+  .form-content{padding:0 18px 16px}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px}
+  .form-grid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);font-weight:500}
+  .form-grid input,.form-grid select{padding:7px 10px;border:1px solid var(--line-strong);
+                                     border-radius:6px;background:#fff;width:100%;font-size:13px}
+  .form-actions{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .err{color:var(--danger);font-size:12px;margin-top:6px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+         background:#111827;color:#fff;padding:10px 18px;border-radius:8px;
+         font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:100}
+  .toast.show{opacity:1}
+  .paid-stamp{display:inline-block;background:var(--ok);color:#fff;padding:4px 10px;
+              border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .pending-stamp{display:inline-block;background:var(--warn);color:#fff;padding:4px 10px;
+                 border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  footer{font-size:11px;color:var(--muted);text-align:center;margin-top:20px;padding:14px}
+  @media (max-width:700px){
+    .hero-amount{font-size:28px}
+    .table-wrap{overflow-x:auto}
+    table{font-size:12px;min-width:600px}
+    .proy-grid{grid-template-columns:repeat(3,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="header-left">
+      <h1>Tarjeta VISA — Banco Galicia</h1>
+      <div class="subtitle" id="subtitle">—</div>
+    </div>
+    <div class="header-right">
+      <input type="file" id="pdfInput" accept="application/pdf" style="display:none">
+      <button class="btn btn-primary" id="btnCargarPdf">+ Cargar resumen PDF</button>
+      <button class="btn btn-sm" id="btnExport">↓ Backup</button>
+      <button class="btn btn-sm" id="btnImport">↑ Importar</button>
+      <input type="file" id="jsonInput" accept="application/json" style="display:none">
+    </div>
+  </header>
+
+  <section class="hero" id="hero">
+    <div class="hero-left">
+      <div class="hero-label">Cargando datos desde la nube...</div>
+      <div class="hero-amount" style="font-size:22px;opacity:.8">···</div>
+    </div>
+  </section>
+
+  <section class="vencimientos" id="vencimientos"></section>
+  <div class="tabs" id="tabs"></div>
+  <div class="banner-resumen" id="bannerResumen"></div>
+  <div class="resumen-info" id="resumenInfo"></div>
+  <section class="proyeccion" id="proyeccion"></section>
+
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title" id="tablaTitle">Consumos del resumen</div>
+      <div class="table-meta" id="tablaMeta"></div>
+    </div>
+    <table id="tablaConsumos">
+      <thead>
+        <tr>
+          <th style="width:80px">Fecha</th>
+          <th>Comercio</th>
+          <th class="center" style="width:70px">Cuota</th>
+          <th class="num" style="width:110px">Importe</th>
+          <th style="width:36px"></th>
+        </tr>
+      </thead>
+      <tbody id="tablaBody"></tbody>
+    </table>
+  </div>
+
+  <details class="form-section">
+    <summary>Agregar compra (se asigna al resumen según fecha)</summary>
+    <div class="form-content">
+      <form id="formCompra" novalidate>
+        <div class="form-grid">
+          <label>Fecha
+            <input type="date" id="cFecha" required title="La compra se asigna al resumen cuyo cierre sea ≥ esta fecha">
+          </label>
+          <label>Comercio
+            <input type="text" id="cComercio" required maxlength="60" placeholder="MERPAGO*MERCADOLIBRE">
+          </label>
+          <label>Cuota (actual/total)
+            <input type="text" id="cCuota" placeholder="03/06 o vacio si 1 pago" maxlength="8">
+          </label>
+          <label>Importe
+            <input type="number" id="cImporte" step="0.01" required placeholder="1234.56">
+          </label>
+          <label>Comprobante
+            <input type="text" id="cComprobante" maxlength="10" placeholder="opcional">
+          </label>
+          <label>Tipo
+            <select id="cTipo">
+              <option value="compra">Compra en cuotas</option>
+              <option value="un_pago">Compra en 1 pago</option>
+              <option value="debito">Débito fijo</option>
+              <option value="devolucion">Devolución (negativo)</option>
+            </select>
+          </label>
+        </div>
+        <div class="err" id="cErr"></div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:6px;cursor:pointer">
+          <input type="checkbox" id="cForzar"> Forzar al resumen actual (ignorar fecha)
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Agregar</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <details class="form-section">
+    <summary>Marcar resumen como pagado</summary>
+    <div class="form-content">
+      <form id="formPago" novalidate>
+        <div class="form-grid">
+          <label>Fecha de pago
+            <input type="date" id="pFecha" required>
+          </label>
+          <label>Monto pagado
+            <input type="number" id="pMonto" step="0.01" required>
+          </label>
+        </div>
+        <div class="err" id="pErr"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Marcar como pagado</button>
+          <button type="button" class="btn" id="btnDesmarcarPago" style="display:none">Desmarcar</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <footer>
+    Datos sincronizados en la nube (Supabase). Los cambios se reflejan en todos tus dispositivos en tiempo real.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (s) { return document.querySelector(s); };
+
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  var SEED = {"version":2,"titular":"FABRICIO DAMIAN DOTTORI","cuit":"30-50000173-5","banco":"Galicia (ex HSBC)","tarjeta":"VISA 6101","cuenta":"1176815654","sucursal":"109","resumenes":[{"id":"r2026-10","mes":"2026-10","titular":"FABRICIO DAMIAN DOTTORI","tarjeta":"VISA 6101","banco":"Galicia (ex HSBC)","cuenta":"1176815654","sucursal":"109","fechaCierre":"2026-10-01","fechaVencimiento":"2026-10-09","saldoAnterior":722140.71,"pagoAnterior":-722140.71,"impuestoSellos":12140.37,"interesesFinanciacion":1111.9,"punitoriosPagoMinAnterior":249.56,"dbIVA":26567.46,"comisionMantCuenta":25206.0,"totalAPagar":821498.52,"pagoMinimo":180710.0,"limite":4500000.0,"tnaPesos":0.562,"teaPesos":0.7322,"cftTea":0.9381,"pagado":true,"fechaPago":"2026-10-06","montoPago":821498.52,"consumos":[{"fecha":"2026-03-29","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"941417","pesos":36897.4},{"fecha":"2026-03-30","comercio":"MERPAGO*TRUCOS","cuota":"06/06","comprobante":"634775","pesos":7162.18},{"fecha":"2026-04-05","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"648050","pesos":6709.85},{"fecha":"2026-04-05","comercio":"MERPAGO*ELECTROWORLD","cuota":"06/06","comprobante":"582888","pesos":27283.16},{"fecha":"2026-04-08","comercio":"MERPAGO*NIPPONPARTS","cuota":"06/06","comprobante":"079498","pesos":6666.66},{"fecha":"2026-04-08","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"880280","pesos":11175.0},{"fecha":"2026-04-16","comercio":"MERPAGO*JAGUAR","cuota":"06/06","comprobante":"215296","pesos":8703.58},{"fecha":"2026-04-22","comercio":"MERPAGO*METROPOLITAN","cuota":"06/06","comprobante":"240741","pesos":11466.66},{"fecha":"2026-04-22","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"984094","pesos":22714.41},{"fecha":"2026-04-26","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"316856","pesos":5106.6},{"fecha":"2026-04-26","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"627161","pesos":7869.03},{"fecha":"2026-04-29","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"512041","pesos":20035.35},{"fecha":"2026-05-01","comercio":"MERPAGO*TELEPASE","cuota":"05/06","comprobante":"888371","pesos":1581.66},{"fecha":"2026-05-02","comercio":"MERPAGO*MERCADOLIBRE","cuota":"05/06","comprobante":"764689","pesos":6714.4},{"fecha":"2026-05-06","comercio":"MERPAGO*VITARIS","cuota":"05/06","comprobante":"524606","pesos":6499.83},{"fecha":"2026-05-17","comercio":"MERPAGO*DXELECTRONIC","cuota":"05/06","comprobante":"780960","pesos":7833.16},{"fecha":"2026-05-23","comercio":"MERPAGO*KALLUMLIFEDE","cuota":"05/06","comprobante":"367122","pesos":7887.14},{"fecha":"2026-05-25","comercio":"MERPAGO*MERCADOLIBRE","cuota":"05/06","comprobante":"941863","pesos":8990.0},{"fecha":"2026-06-01","comercio":"MERPAGO*PHOTOSTORE","cuota":"04/06","comprobante":"878067","pesos":6383.16},{"fecha":"2026-06-05","comercio":"MERPAGO*CARECITY","cuota":"04/06","comprobante":"736694","pesos":6786.81},{"fecha":"2026-06-11","comercio":"MERPAGO*IKNACAR","cuota":"04/06","comprobante":"222005","pesos":13055.5},{"fecha":"2026-06-14","comercio":"MERPAGO*MERCADOLIBRE","cuota":"04/06","comprobante":"355843","pesos":17612.32},{"fecha":"2026-06-30","comercio":"MERPAGO*KRONOSBAZAR","cuota":"04/06","comprobante":"970631","pesos":18244.6},{"fecha":"2026-07-01","comercio":"MERPAGO*BIDCOM","cuota":"04/06","comprobante":"151994","pesos":40708.16},{"fecha":"2026-07-06","comercio":"MERPAGO*PINTUNET","cuota":"03/06","comprobante":"854035","pesos":7534.2},{"fecha":"2026-07-16","comercio":"MERPAGO*GEXCORP","cuota":"03/06","comprobante":"361275","pesos":28509.67},{"fecha":"2026-08-04","comercio":"MERPAGO*DEHUKA","cuota":"02/06","comprobante":"705331","pesos":7026.6},{"fecha":"2026-08-13","comercio":"MERPAGO*ALASTORSA","cuota":"02/06","comprobante":"452636","pesos":4635.5},{"fecha":"2026-08-17","comercio":"MERPAGO*ALEXBIRCHMEY","cuota":"02/03","comprobante":"336001","pesos":14098.77},{"fecha":"2026-08-24","comercio":"MERPAGO*SANISIDRODEC","cuota":"02/06","comprobante":"922461","pesos":8255.25},{"fecha":"2026-08-31","comercio":"MERPAGO*HTVS","cuota":"01/06","comprobante":"127583","pesos":6032.35},{"fecha":"2026-09-10","comercio":"OSSACRA","cuota":"","comprobante":"582374","pesos":59195.6,"esDebitoFijo":true},{"fecha":"2026-09-10","comercio":"OSSACRA","cuota":"","comprobante":"582373","pesos":59195.6,"esDebitoFijo":true},{"fecha":"2026-09-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"01/06","comprobante":"010695","pesos":6748.35},{"fecha":"2026-09-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"01/06","comprobante":"149186","pesos":6927.68},{"fecha":"2026-09-16","comercio":"RIO URUGUAY SEGUROS","cuota":"","comprobante":"260063","pesos":48000.0,"esDebitoFijo":true},{"fecha":"2026-09-16","comercio":"RIO URUGUAY SEGUROS","cuota":"","comprobante":"260386","pesos":48400.0,"esDebitoFijo":true},{"fecha":"2026-09-17","comercio":"MERPAGO*AQUABREED","cuota":"01/06","comprobante":"375077","pesos":3974.2},{"fecha":"2026-09-18","comercio":"CAMI SALUD","cuota":"","comprobante":"717894","pesos":134680.0,"esDebitoFijo":true},{"fecha":"2026-09-18","comercio":"K MONET","cuota":"","comprobante":"000001","pesos":17865.22,"esDebitoFijo":true},{"fecha":"2026-09-23","comercio":"MERPAGO*MIKRA","cuota":"01/06","comprobante":"330448","pesos":10994.74},{"fecha":"2026-09-25","comercio":"MERPAGO*MERCADOLIBRE","cuota":"01/06","comprobante":"532613","pesos":11439.5},{"fecha":"2026-09-25","comercio":"Rossetti Deportes Web","cuota":"01/06","comprobante":"542619","pesos":33278.0},{"fecha":"2026-09-28","comercio":"MERPAGO*TUELECTRO","cuota":"01/06","comprobante":"569243","pesos":26954.85},{"fecha":"2026-09-28","comercio":"MERPAGO*MERCADOLIBRE","cuota":"","comprobante":"928398","pesos":-68637.0,"esDevolucion":true},{"fecha":"2026-09-29","comercio":"MERPAGO*MERCADOLIBRE","cuota":"01/06","comprobante":"731070","pesos":11439.5},{"fecha":"2026-09-30","comercio":"MERPAGO*MERCADOLIBRE","cuota":"","comprobante":"651222","pesos":-23423.68,"esDevolucion":true}],"cuotasAVencer":{"2026-10":330145.74,"2026-11":276540.78,"2026-12":173750.23,"2027-01":137706.36,"2027-02":117789.01,"2027-03":0.0}},{"id":"r2026-11","mes":"2026-11","titular":"FABRICIO DAMIAN DOTTORI","tarjeta":"VISA 6101","banco":"Galicia (ex HSBC)","cuenta":"1176815654","sucursal":"109","fechaCierre":"2026-10-29","fechaVencimiento":"2026-11-11","saldoAnterior":821498.52,"pagoAnterior":-821498.52,"totalAPagar":716191.23,"pagoMinimo":null,"pagado":false,"fechaPago":null,"montoPago":null,"consumos":[{"fecha":"2026-10-15","comercio":"MERPAGO*CARECITY","cuota":"05/06","comprobante":"","pesos":6786.81},{"fecha":"2026-10-15","comercio":"MERPAGO*PHOTOSTORE","cuota":"05/06","comprobante":"","pesos":6383.16},{"fecha":"2026-10-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"","pesos":8990.0},{"fecha":"2026-10-15","comercio":"MERPAGO*KALLUMLIFEDE","cuota":"06/06","comprobante":"","pesos":7887.14},{"fecha":"2026-10-15","comercio":"MERPAGO*DXELECTRONIC","cuota":"06/06","comprobante":"","pesos":7833.16},{"fecha":"2026-10-15","comercio":"MERPAGO*VITARIS","cuota":"06/06","comprobante":"","pesos":6499.83},{"fecha":"2026-10-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"06/06","comprobante":"","pesos":6714.4},{"fecha":"2026-10-15","comercio":"MERPAGO*TELEPASE","cuota":"06/06","comprobante":"","pesos":1581.66},{"fecha":"2026-10-15","comercio":"MERPAGO*GEXCORP","cuota":"04/06","comprobante":"","pesos":28509.67},{"fecha":"2026-10-15","comercio":"MERPAGO*BIDCOM","cuota":"05/06","comprobante":"","pesos":40708.16},{"fecha":"2026-10-15","comercio":"MERPAGO*KRONOSBAZAR","cuota":"04/06","comprobante":"","pesos":18244.6},{"fecha":"2026-10-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"04/06","comprobante":"","pesos":17612.32},{"fecha":"2026-10-15","comercio":"MERPAGO*IKNACAR","cuota":"04/06","comprobante":"","pesos":13055.5},{"fecha":"2026-10-15","comercio":"MERPAGO*CARECITY","cuota":"04/06","comprobante":"","pesos":6786.81},{"fecha":"2026-10-15","comercio":"MERPAGO*PHOTOSTORE","cuota":"04/06","comprobante":"","pesos":6383.16},{"fecha":"2026-10-15","comercio":"MERPAGO*PINTUNET","cuota":"03/06","comprobante":"","pesos":7534.2},{"fecha":"2026-10-15","comercio":"MERPAGO*DEHUKA","cuota":"02/06","comprobante":"","pesos":7026.6},{"fecha":"2026-10-15","comercio":"MERPAGO*SANISIDRODEC","cuota":"03/06","comprobante":"","pesos":8255.25},{"fecha":"2026-10-15","comercio":"MERPAGO*ALEXBIRCHMEY","cuota":"03/03","comprobante":"","pesos":14098.77},{"fecha":"2026-10-15","comercio":"MERPAGO*HTVS","cuota":"01/06","comprobante":"","pesos":6032.35},{"fecha":"2026-10-15","comercio":"MERPAGO*ALASTORSA","cuota":"02/06","comprobante":"","pesos":4635.5},{"fecha":"2026-10-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"02/06","comprobante":"","pesos":6748.35},{"fecha":"2026-10-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"02/06","comprobante":"","pesos":6927.68},{"fecha":"2026-10-15","comercio":"MERPAGO*AQUABREED","cuota":"02/06","comprobante":"","pesos":3974.2},{"fecha":"2026-10-15","comercio":"MERPAGO*MIKRA","cuota":"02/06","comprobante":"","pesos":10994.74},{"fecha":"2026-10-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"02/06","comprobante":"","pesos":11439.5},{"fecha":"2026-10-15","comercio":"Rossetti Deportes Web","cuota":"02/06","comprobante":"","pesos":33278.0},{"fecha":"2026-10-15","comercio":"MERPAGO*TUELECTRO","cuota":"02/06","comprobante":"","pesos":26954.85},{"fecha":"2026-10-15","comercio":"MERPAGO*MERCADOLIBRE","cuota":"02/06","comprobante":"","pesos":11439.5},{"fecha":"2026-10-16","comercio":"OSSACRA","cuota":"","comprobante":"","pesos":62521.3,"esDebitoFijo":true},{"fecha":"2026-10-16","comercio":"OSSACRA","cuota":"","comprobante":"","pesos":62521.3,"esDebitoFijo":true},{"fecha":"2026-10-18","comercio":"RIO URUGUAY SEGUR","cuota":"","comprobante":"","pesos":48000.0,"esDebitoFijo":true},{"fecha":"2026-10-18","comercio":"RIO URUGUAY SEGUR","cuota":"","comprobante":"","pesos":48400.0,"esDebitoFijo":true},{"fecha":"2026-10-20","comercio":"CAMI SALUD","cuota":"","comprobante":"","pesos":136910.0,"esDebitoFijo":true},{"fecha":"2026-10-16","comercio":"MONET","cuota":"","comprobante":"","pesos":17865.22,"esDebitoFijo":true},{"fecha":"2026-10-23","comercio":"MERPAGO*MERCADOLIBRE","cuota":"","comprobante":"","pesos":38800.0},{"fecha":"2026-10-07","comercio":"DEVOL. INT.FINANCIACION","cuota":"","comprobante":"","pesos":-1111.9,"esDevolucion":true},{"fecha":"2026-10-07","comercio":"DEVOL. INT.PUNITORIOS","cuota":"","comprobante":"","pesos":-249.56,"esDevolucion":true}],"cuotasAVencer":{}}]};
+
+  function uid() {
+    return (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'id' + Date.now() + Math.random().toString(16).slice(2);
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (m) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+  function money(n, dec) {
+    dec = (dec === undefined) ? 2 : dec;
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency', currency: 'ARS',
+      minimumFractionDigits: dec, maximumFractionDigits: dec
+    }).format(Number(n) || 0);
+  }
+  function fmtFecha(fecha) {
+    if (!fecha) return '';
+    var p = fecha.split('-');
+    return p[2] + '/' + p[1] + '/' + p[0].slice(2);
+  }
+  function fmtMesCorto(mes) {
+    var MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    var p = mes.split('-');
+    return MESES[Number(p[1]) - 1] + ' ' + p[0];
+  }
+  function fmtMesLargo(mes) {
+    var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var p = mes.split('-');
+    return MESES[Number(p[1]) - 1] + ' ' + p[0];
+  }
+  function todayISO() {
+    return new Date().toLocaleDateString('en-CA');
+  }
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2500);
+  }
+
+  /* ============================================================
+     SUPABASE — Configuración (con TUS credenciales)
+     ============================================================ */
+  const SUPABASE_URL = 'https://loeaunabtnsjqytlxuln.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_OQkOq2tP9J67JKYXboHP1Q_XT3Ipth-';
+  /* ============================================================ */
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var SEED_VERSION = 2;
+  var state = JSON.parse(JSON.stringify(SEED));
+  var resumenActual = null;
+
+  function selectDefaultResumen() {
+    var noPagados = state.resumenes.filter(function (r) { return !r.pagado; });
+    if (noPagados.length) {
+      resumenActual = noPagados[noPagados.length - 1];
+    } else if (state.resumenes.length) {
+      resumenActual = state.resumenes[state.resumenes.length - 1];
+    } else {
+      resumenActual = null;
+    }
+  }
+
+  async function save() {
+    try {
+      state.version = SEED_VERSION;
+      const { error } = await supabaseClient
+        .from('app_state')
+        .upsert({ id: 1, data: state, updated_at: new Date().toISOString() });
+      if (error) throw error;
+    } catch (e) {
+      console.error('Error al guardar en Supabase:', e);
+      toast('Error de conexión. Los cambios podrían no sincronizarse.');
+    }
+  }
+  const guardarEstadoEnNube = save;
+
+  async function cargarEstadoDesdeNube() {
+    try {
+      const { data, error } = await supabaseClient
+        .from('app_state')
+        .select('data')
+        .eq('id', 1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data && data.data && Array.isArray(data.data.resumenes) && data.data.resumenes.length > 0) {
+        state = data.data;
+      } else {
+        await guardarEstadoEnNube(state);
+      }
+    } catch (e) {
+      console.error('Error al cargar desde Supabase. Usando SEED local:', e);
+      toast('No se pudo conectar a la nube. Usando datos locales.');
+    } finally {
+      selectDefaultResumen();
+      render();
+      suscribirRealtime();
+    }
+  }
+
+  function suscribirRealtime() {
+    supabaseClient
+      .channel('app_state_realtime')
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.1' },
+        function (payload) {
+          if (payload.new && payload.new.data && Array.isArray(payload.new.data.resumenes)) {
+            console.log('🔄 Cambio remoto recibido');
+            state = payload.new.data;
+            if (!resumenActual || !state.resumenes.some(function (r) { return r.id === resumenActual.id; })) {
+              selectDefaultResumen();
+            } else {
+              resumenActual = state.resumenes.find(function (r) { return r.id === resumenActual.id; });
+            }
+            render();
+          }
+        })
+      .subscribe(function (status) {
+        if (status === 'SUBSCRIBED') console.log('✓ Realtime conectado');
+      });
+  }
+
+  function proximoResumen() {
+    return state.resumenes
+      .filter(function (r) { return !r.pagado; })
+      .sort(function (a, b) { return a.fechaVencimiento.localeCompare(b.fechaVencimiento); })[0] || null;
+  }
+
+  function renderHero() {
+    var proximo = proximoResumen();
+    if (!proximo) {
+      $('#hero').innerHTML = '<div class="hero-left"><div class="hero-label">Sin resúmenes pendientes</div>' +
+        '<div class="hero-amount">$0</div><div class="hero-date">Cargá un nuevo resumen para continuar</div></div>';
+      return;
+    }
+    var diasFaltan = Math.ceil((new Date(proximo.fechaVencimiento) - new Date(todayISO())) / (1000*60*60*24));
+    var diasClass = diasFaltan <= 3 ? 'danger' : diasFaltan <= 7 ? 'ok' : '';
+    var diasTexto = diasFaltan > 0 ? 'Vence en ' + diasFaltan + ' día' + (diasFaltan === 1 ? '' : 's') :
+                    diasFaltan === 0 ? 'Vence HOY' : 'Vencido hace ' + Math.abs(diasFaltan) + ' día' + (diasFaltan === -1 ? '' : 's');
+    var totalConsumos = (proximo.consumos || []).reduce(function (s, c) { return s + (Number(c.pesos) || 0); }, 0);
+    var totalDebitos = (proximo.consumos || []).filter(function (c) { return c.esDebitoFijo; })
+                      .reduce(function (s, c) { return s + (Number(c.pesos) || 0); }, 0);
+    var totalCuotas = totalConsumos - totalDebitos;
+    var totalAPagar = (proximo.totalAPagar != null) ? proximo.totalAPagar : totalConsumos;
+    var cargos = totalAPagar - totalConsumos;
+    $('#hero').innerHTML =
+      '<div class="hero-left">' +
+        '<div class="hero-label">Próximo vencimiento · ' + fmtMesLargo(proximo.mes) + '</div>' +
+        '<div class="hero-amount">' + money(totalAPagar) + '</div>' +
+        '<div class="hero-date">' + diasTexto + ' · ' + fmtFecha(proximo.fechaVencimiento) + '</div>' +
+      '</div>' +
+      '<div class="hero-right">' +
+        '<div class="hero-stat"><span class="hero-stat-label">Cuotas</span>' +
+          '<span class="hero-stat-value">' + money(totalCuotas, 0) + '</span></div>' +
+        '<div class="hero-stat"><span class="hero-stat-label">Débitos fijos</span>' +
+          '<span class="hero-stat-value">' + money(totalDebitos, 0) + '</span></div>' +
+        '<div class="hero-stat"><span class="hero-stat-label">Cargos e imp.</span>' +
+          '<span class="hero-stat-value">' + money(cargos, 0) + '</span></div>' +
+        '<div class="hero-stat"><span class="hero-stat-label">Días restantes</span>' +
+          '<span class="hero-stat-value ' + diasClass + '">' + diasFaltan + '</span></div>' +
+      '</div>';
+  }
+
+  function renderVencimientos() {
+    var proximos = state.resumenes
+      .filter(function (r) { return !r.pagado; })
+      .sort(function (a, b) { return a.fechaVencimiento.localeCompare(b.fechaVencimiento); })
+      .slice(0, 4);
+    if (!proximos.length) {
+      $('#vencimientos').style.display = 'none';
+      return;
+    }
+    $('#vencimientos').style.display = 'block';
+    var html = '<div class="venc-title">Próximos vencimientos</div><div class="venc-list">';
+    proximos.forEach(function (r) {
+      var dias = Math.ceil((new Date(r.fechaVencimiento) - new Date(todayISO())) / (1000*60*60*24));
+      var cls = dias <= 3 ? 'urgent' : dias <= 10 ? 'soon' : '';
+      html += '<div class="venc-item ' + cls + '">' +
+        '<div class="venc-mes">' + fmtMesCorto(r.mes) + '</div>' +
+        '<div class="venc-monto">' + money(r.totalAPagar || 0, 0) + '</div>' +
+        '<div class="venc-fecha">Vence ' + fmtFecha(r.fechaVencimiento) + ' · ' +
+          (dias > 0 ? dias + ' días' : dias === 0 ? 'hoy' : 'vencido') + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+    $('#vencimientos').innerHTML = html;
+  }
+
+  function renderTabs() {
+    var html = '';
+    state.resumenes.slice().reverse().forEach(function (r) {
+      var cls = r.pagado ? 'paid' : 'pending';
+      if (resumenActual && r.id === resumenActual.id) cls += ' active';
+      html += '<div class="tab ' + cls + '" data-id="' + r.id + '">' +
+        fmtMesCorto(r.mes) + '</div>';
+    });
+    $('#tabs').innerHTML = html;
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        var id = t.dataset.id;
+        resumenActual = state.resumenes.find(function (r) { return r.id === id; });
+        render();
+      });
+    });
+  }
+
+  function renderBannerResumen() {
+    var el = $('#bannerResumen');
+    if (!resumenActual) {
+      el.className = 'banner-resumen';
+      el.innerHTML = '';
+      return;
+    }
+    var proximo = proximoResumen();
+    var esElDelHero = proximo && resumenActual.id === proximo.id;
+    if (esElDelHero) {
+      el.className = 'banner-resumen';
+      el.innerHTML = '';
+      return;
+    }
+    if (resumenActual.pagado) {
+      el.className = 'banner-resumen show pagado';
+      var fechaPago = resumenActual.fechaPago ? ' el ' + fmtFecha(resumenActual.fechaPago) : '';
+      var extra = proximo ? ' · El próximo vencimiento (' + fmtMesLargo(proximo.mes) + ') está arriba ↑' : '';
+      el.innerHTML = '✓ <strong>Estás viendo ' + fmtMesLargo(resumenActual.mes) +
+        ' · PAGADO' + fechaPago + '</strong>' + extra;
+      return;
+    }
+    el.className = 'banner-resumen show pendiente-no-hero';
+    var extra2 = proximo
+      ? ' · El próximo vencimiento es <strong>' + fmtMesLargo(proximo.mes) + '</strong> (arriba ↑)'
+      : '';
+    el.innerHTML = '⚠ <strong>Estás viendo ' + fmtMesLargo(resumenActual.mes) +
+      ' · PENDIENTE (no es el próximo a vencer)</strong>' + extra2;
+  }
+
+  function renderInfo() {
+    if (!resumenActual) {
+      $('#resumenInfo').innerHTML = '';
+      return;
+    }
+    var r = resumenActual;
+    var totalConsumos = (r.consumos || []).reduce(function (s, c) { return s + (Number(c.pesos) || 0); }, 0);
+    var estado = r.pagado
+      ? '<span class="paid-stamp">PAGADO ' + fmtFecha(r.fechaPago) + '</span>'
+      : '<span class="pending-stamp">PENDIENTE</span>';
+    var cells = [
+      { label: 'Cierre', value: fmtFecha(r.fechaCierre) },
+      { label: 'Vencimiento', value: fmtFecha(r.fechaVencimiento) },
+      { label: 'Saldo anterior', value: money(r.saldoAnterior || 0) },
+      { label: 'Pago anterior', value: money(r.pagoAnterior || 0) },
+      { label: 'Consumos del mes', value: money(totalConsumos) },
+      { label: 'Total a pagar', value: money(r.totalAPagar != null ? r.totalAPagar : totalConsumos) },
+      { label: 'Estado', value: estado }
+    ];
+    var html = cells.map(function (c) {
+      return '<div class="info-cell"><span class="info-label">' + c.label + '</span>' +
+        '<span class="info-value">' + c.value + '</span></div>';
+    }).join('');
+    $('#resumenInfo').innerHTML = html;
+  }
+
+  function renderTotales(r, totalConsumos, nDebitos, nDevoluciones) {
+    var totalAPagar = (r.totalAPagar != null) ? r.totalAPagar : totalConsumos;
+    var cargos = totalAPagar - totalConsumos;
+    var tieneDesglose = (r.impuestoSellos != null) || (r.interesesFinanciacion != null) ||
+                        (r.punitoriosPagoMinAnterior != null) || (r.dbIVA != null) ||
+                        (r.comisionMantCuenta != null);
+    var html = '';
+    html += '<tr class="total-subtotal">' +
+      '<td></td>' +
+      '<td>Subtotal consumos (' + r.consumos.length + ' mov · ' + nDebitos + ' débitos · ' + nDevoluciones + ' devoluciones)</td>' +
+      '<td></td>' +
+      '<td class="num">' + money(totalConsumos) + '</td>' +
+      '<td></td>' +
+    '</tr>';
+    var sumaDetalles = 0;
+    if (tieneDesglose) {
+      if (r.impuestoSellos != null) {
+        html += '<tr class="total-detalle"><td></td><td>Impuesto sellos</td><td></td><td class="num">' + money(r.impuestoSellos) + '</td><td></td></tr>';
+        sumaDetalles += r.impuestoSellos;
+      }
+      if (r.interesesFinanciacion != null) {
+        html += '<tr class="total-detalle"><td></td><td>Intereses financiación</td><td></td><td class="num">' + money(r.interesesFinanciacion) + '</td><td></td></tr>';
+        sumaDetalles += r.interesesFinanciacion;
+      }
+      if (r.punitoriosPagoMinAnterior != null) {
+        html += '<tr class="total-detalle"><td></td><td>Punitorios pago mínimo anterior</td><td></td><td class="num">' + money(r.punitoriosPagoMinAnterior) + '</td><td></td></tr>';
+        sumaDetalles += r.punitoriosPagoMinAnterior;
+      }
+      if (r.dbIVA != null) {
+        html += '<tr class="total-detalle"><td></td><td>IVA 21%</td><td></td><td class="num">' + money(r.dbIVA) + '</td><td></td></tr>';
+        sumaDetalles += r.dbIVA;
+      }
+      if (r.comisionMantCuenta != null) {
+        html += '<tr class="total-detalle"><td></td><td>Comisión mantenimiento</td><td></td><td class="num">' + money(r.comisionMantCuenta) + '</td><td></td></tr>';
+        sumaDetalles += r.comisionMantCuenta;
+      }
+      var otros = cargos - sumaDetalles;
+      if (Math.abs(otros) > 0.01) {
+        html += '<tr class="total-detalle">' +
+          '<td></td>' +
+          '<td>Otros conceptos del resumen</td>' +
+          '<td></td>' +
+          '<td class="num">' + money(otros) + '</td>' +
+          '<td></td>' +
+        '</tr>';
+      }
+    } else if (Math.abs(cargos) > 0.01) {
+      html += '<tr class="total-detalle">' +
+        '<td></td>' +
+        '<td>Ajuste vs resumen del banco</td>' +
+        '<td></td>' +
+        '<td class="num">' + money(cargos) + '</td>' +
+        '<td></td>' +
+      '</tr>';
+    }
+    html += '<tr class="total-final">' +
+      '<td></td>' +
+      '<td>TOTAL A PAGAR</td>' +
+      '<td></td>' +
+      '<td class="num">' + money(totalAPagar) + '</td>' +
+      '<td></td>' +
+    '</tr>';
+    return html;
+  }
+
+  function renderProyeccion() {
+    var r = resumenActual;
+    var el = $('#proyeccion');
+    if (!r || !r.cuotasAVencer || Object.keys(r.cuotasAVencer).length === 0) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'block';
+    var entries = Object.entries(r.cuotasAVencer).sort(function (a, b) {
+      return a[0].localeCompare(b[0]);
+    });
+    var hoyMes = todayISO().slice(0, 7);
+    var totalProyectado = 0;
+    var totalFuturo = 0;
+    var html = '<div class="proy-title">Proyección de cuotas a vencer</div>' +
+      '<div class="proy-subtitle">Informada por el banco en el resumen de ' + fmtMesLargo(r.mes) + ' · Es una foto del momento del cierre, no una promesa: nuevas compras pueden agregar cuotas.</div>' +
+      '<div class="proy-grid">';
+    entries.forEach(function (e) {
+      var mes = e[0];
+      var monto = Number(e[1]) || 0;
+      totalProyectado += monto;
+      var esPasado = (mes < hoyMes) || (mes === hoyMes && monto === 0);
+      var esCero = (monto === 0);
+      var cls = (esPasado || esCero) ? 'proy-card pagado' : 'proy-card';
+      var display = (esCero) ? '—' : money(monto, 0);
+      if (mes > hoyMes) totalFuturo += monto;
+      html += '<div class="' + cls + '">' +
+        '<div class="proy-card-mes">' + fmtMesCorto(mes) + '</div>' +
+        '<div class="proy-card-monto">' + display + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+    html += '<div class="proy-total">' +
+      '<span>Total proyectado (' + entries.length + ' meses):</span>' +
+      '<strong>' + money(totalProyectado, 0) + '</strong>' +
+    '</div>';
+    if (totalFuturo > 0 && Math.abs(totalFuturo - totalProyectado) > 0.01) {
+      html += '<div class="proy-total" style="border-top:0;padding-top:4px;margin-top:0">' +
+        '<span>Pendiente a partir del próximo mes:</span>' +
+        '<strong>' + money(totalFuturo, 0) + '</strong>' +
+      '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function renderTabla() {
+    if (!resumenActual) {
+      $('#tablaBody').innerHTML = '';
+      $('#tablaTitle').textContent = 'Sin resumen seleccionado';
+      $('#tablaMeta').textContent = '';
+      return;
+    }
+    var r = resumenActual;
+    var consumos = r.consumos || [];
+    $('#tablaTitle').textContent = 'Consumos del resumen · ' + fmtMesLargo(r.mes);
+    $('#tablaMeta').textContent = consumos.length + ' movimientos';
+    consumos.sort(function (a, b) {
+      return (a.fecha || '').localeCompare(b.fecha || '');
+    });
+    var html = '';
+    var totalPositivos = 0, totalNegativos = 0, nDebitos = 0, nDevoluciones = 0;
+    consumos.forEach(function (c, idx) {
+      var importe = Number(c.pesos) || 0;
+      var isNeg = importe < 0;
+      var isDebito = c.esDebitoFijo;
+      var isDevolucion = c.esDevolucion;
+      if (isNeg) totalNegativos += Math.abs(importe);
+      else totalPositivos += importe;
+      if (isDebito) nDebitos++;
+      if (isDevolucion) nDevoluciones++;
+      var trClass = isDebito ? 'debito' : isDevolucion ? 'devolucion' : '';
+      var cuotaHtml = '';
+      if (c.cuota) {
+        var parts = c.cuota.split('/');
+        var cuotaCls = parts[0] === '01' ? 'first' : parts[0] === parts[1] ? 'last' : '';
+        cuotaHtml = '<span class="badge-cuota ' + cuotaCls + '">' + c.cuota + '</span>';
+      }
+      var badge = isDebito ? '<span class="badge-debito">débito</span> ' :
+                  isDevolucion ? '<span class="badge-devolucion">devolución</span> ' : '';
+      html += '<tr class="' + trClass + '">' +
+        '<td>' + fmtFecha(c.fecha) + '</td>' +
+        '<td><span class="comercio">' + esc(c.comercio) + '</span> ' + badge +
+          (c.comprobante ? '<span style="color:#9ca3af;font-size:11px"> #' + esc(c.comprobante) + '</span>' : '') + '</td>' +
+        '<td class="center">' + cuotaHtml + '</td>' +
+        '<td class="num ' + (isNeg ? 'negative' : '') + '">' + money(importe) + '</td>' +
+        '<td><button class="btn-sm" style="padding:2px 6px;background:transparent;border:0;color:#9ca3af;cursor:pointer" ' +
+          'data-del="' + idx + '" title="Borrar">×</button></td>' +
+      '</tr>';
+    });
+    var totalNeto = totalPositivos - totalNegativos;
+    html += renderTotales(r, totalNeto, nDebitos, nDevoluciones);
+    $('#tablaBody').innerHTML = html;
+    document.querySelectorAll('[data-del]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var idx = parseInt(b.dataset.del, 10);
+        var c = consumos[idx];
+        if (!c) return;
+        if (confirm('¿Borrar "' + c.comercio + '" (' + money(c.pesos) + ')?')) {
+          consumos.splice(idx, 1);
+          save();
+          render();
+          toast('Movimiento borrado');
+        }
+      });
+    });
+  }
+
+  function render() {
+    $('#subtitle').textContent = state.titular + ' · CUIT ' + state.cuit + ' · Cuenta ' + state.cuenta;
+    renderHero();
+    renderVencimientos();
+    renderTabs();
+    renderBannerResumen();
+    renderInfo();
+    renderProyeccion();
+    renderTabla();
+    renderFormPagoState();
+  }
+
+  function encontrarResumenPorFecha(fechaCompra) {
+    var candidatos = state.resumenes
+      .filter(function (r) { return r.fechaCierre && r.fechaCierre >= fechaCompra; })
+      .sort(function (a, b) { return a.fechaCierre.localeCompare(b.fechaCierre); });
+    return candidatos[0] || null;
+  }
+
+  $('#formCompra').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = $('#cErr');
+    err.textContent = '';
+    if (!resumenActual) { err.textContent = 'Seleccioná un resumen primero.'; return; }
+    var fecha = $('#cFecha').value;
+    var comercio = $('#cComercio').value.trim();
+    var cuota = $('#cCuota').value.trim();
+    var importe = parseFloat($('#cImporte').value);
+    var comprobante = $('#cComprobante').value.trim();
+    var tipo = $('#cTipo').value;
+    var forzar = $('#cForzar').checked;
+    if (!fecha) { err.textContent = 'Ingresá la fecha.'; return; }
+    if (!comercio) { err.textContent = 'Ingresá el comercio.'; return; }
+    if (!(importe !== 0)) { err.textContent = 'Ingresá el importe (puede ser negativo).'; return; }
+    if (!importe) { err.textContent = 'Importe inválido.'; return; }
+    var nuevo = {
+      fecha: fecha,
+      comercio: comercio,
+      cuota: cuota,
+      comprobante: comprobante,
+      pesos: importe
+    };
+    if (tipo === 'debito') nuevo.esDebitoFijo = true;
+    if (tipo === 'devolucion') { nuevo.esDevolucion = true; if (importe > 0) nuevo.pesos = -Math.abs(importe); }
+    var resumenDestino;
+    if (forzar) {
+      resumenDestino = resumenActual;
+    } else {
+      resumenDestino = encontrarResumenPorFecha(fecha);
+      if (!resumenDestino) {
+        var ok = confirm(
+          'La compra del ' + fmtFecha(fecha) + ' no corresponde a ningún resumen cargado.\n\n' +
+          '¿Querés agregarla igual al resumen actual (' + fmtMesLargo(resumenActual.mes) + ')?'
+        );
+        if (!ok) return;
+        resumenDestino = resumenActual;
+      }
+      if (resumenDestino.id !== resumenActual.id) {
+        var ok2 = confirm(
+          'La compra del ' + fmtFecha(fecha) + ' corresponde al resumen de ' + fmtMesLargo(resumenDestino.mes) +
+          ' (cierra el ' + fmtFecha(resumenDestino.fechaCierre) + '), no al actual de ' + fmtMesLargo(resumenActual.mes) + '.\n\n' +
+          '¿Querés agregarla al resumen de ' + fmtMesLargo(resumenDestino.mes) + '?'
+        );
+        if (!ok2) return;
+        resumenActual = resumenDestino;
+      }
+      if (resumenDestino.pagado) {
+        var ok3 = confirm(
+          'El resumen de ' + fmtMesLargo(resumenDestino.mes) + ' ya está marcado como PAGADO.\n\n' +
+          '¿Querés marcarlo como PENDIENTE de nuevo?'
+        );
+        if (ok3) {
+          resumenDestino.pagado = false;
+          resumenDestino.fechaPago = null;
+          resumenDestino.montoPago = null;
+        }
+      }
+    }
+    resumenDestino.consumos.push(nuevo);
+    save();
+    render();
+    e.target.reset();
+    $('#cFecha').value = todayISO();
+    $('#cForzar').checked = false;
+    toast('Movimiento agregado a ' + fmtMesLargo(resumenDestino.mes) + ' · ' + money(nuevo.pesos));
+  });
+
+  function renderFormPagoState() {
+    if (!resumenActual) return;
+    var pagado = resumenActual.pagado;
+    $('#pFecha').value = resumenActual.fechaPago || todayISO();
+    $('#pMonto').value = resumenActual.montoPago || resumenActual.totalAPagar || '';
+    $('#btnDesmarcarPago').style.display = pagado ? 'inline-block' : 'none';
+  }
+
+  $('#formPago').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = $('#pErr');
+    err.textContent = '';
+    if (!resumenActual) return;
+    var fecha = $('#pFecha').value;
+    var monto = parseFloat($('#pMonto').value);
+    if (!fecha) { err.textContent = 'Ingresá la fecha de pago.'; return; }
+    if (!(monto > 0)) { err.textContent = 'El monto debe ser mayor a 0.'; return; }
+    resumenActual.pagado = true;
+    resumenActual.fechaPago = fecha;
+    resumenActual.montoPago = monto;
+    save();
+    render();
+    toast('Resumen marcado como pagado');
+  });
+
+  $('#btnDesmarcarPago').addEventListener('click', function () {
+    if (!resumenActual) return;
+    if (!confirm('¿Desmarcar este resumen como no pagado?')) return;
+    resumenActual.pagado = false;
+    resumenActual.fechaPago = null;
+    resumenActual.montoPago = null;
+    save();
+    render();
+    toast('Resumen desmarcado');
+  });
+
+  $('#btnExport').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'tarjeta-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Backup exportado');
+  });
+
+  $('#btnImport').addEventListener('click', function () {
+    $('#jsonInput').click();
+  });
+
+  $('#jsonInput').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      try {
+        var data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data.resumenes)) throw new Error('Formato inválido');
+        var modo = confirm('¿Reemplazar todos los datos en la NUBE?\n\nOK = Reemplazar todo\nCancelar = Fusionar (mantener actuales + agregar resúmenes nuevos)');
+        if (modo) {
+          state = data;
+        } else {
+          var idsActuales = {};
+          state.resumenes.forEach(function (r) { idsActuales[r.id] = true; });
+          var nuevos = data.resumenes.filter(function (r) { return !idsActuales[r.id]; });
+          state.resumenes = state.resumenes.concat(nuevos);
+        }
+        selectDefaultResumen();
+        save();
+        render();
+        toast('Datos importados y sincronizados');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+      $('#jsonInput').value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  $('#btnCargarPdf').addEventListener('click', function () {
+    $('#pdfInput').click();
+  });
+
+  $('#pdfInput').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    toast('Procesando PDF...');
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var typedArray = new Uint8Array(ev.target.result);
+      pdfjsLib.getDocument(typedArray).promise.then(function (pdf) {
+        var totalPaginas = pdf.numPages;
+        var paginasTexto = new Array(totalPaginas);
+        var paginasPromises = [];
+        for (var i = 1; i <= totalPaginas; i++) {
+          (function (pageNum) {
+            paginasPromises.push(
+              pdf.getPage(pageNum).then(function (page) {
+                return page.getTextContent().then(function (content) {
+                  var items = content.items.slice().sort(function (a, b) {
+                    if (!a.transform || !b.transform) return 0;
+                    var ya = a.transform[5], yb = b.transform[5];
+                    if (Math.abs(ya - yb) > 2) return yb - ya;
+                    return (a.transform[4] || 0) - (b.transform[4] || 0);
+                  });
+                  var lineas = [];
+                  var lineaActual = [];
+                  var lastY = null;
+                  var TOL = 2;
+                  items.forEach(function (item) {
+                    if (!item.transform) return;
+                    var y = item.transform[5];
+                    if (lastY !== null && Math.abs(y - lastY) > TOL) {
+                      lineas.push(lineaActual.join(' ').trim());
+                      lineaActual = [];
+                    }
+                    lineaActual.push(item.str);
+                    lastY = y;
+                  });
+                  if (lineaActual.length) lineas.push(lineaActual.join(' ').trim());
+                  if (lineas.length <= 1 && content.items.some(function (it) { return it.hasEOL; })) {
+                    lineas = [];
+                    var actual = '';
+                    content.items.forEach(function (it) {
+                      actual += it.str;
+                      if (it.hasEOL) { lineas.push(actual.trim()); actual = ''; }
+                    });
+                    if (actual.trim()) lineas.push(actual.trim());
+                  }
+                  paginasTexto[pageNum - 1] = lineas.join('\n');
+                });
+              })
+            );
+          })(i);
+        }
+        Promise.all(paginasPromises).then(function () {
+          var textoCompleto = paginasTexto.join('\n');
+          var resumen = parsearResumen(textoCompleto, file.name);
+          if (resumen) {
+            var idxExistente = state.resumenes.findIndex(function (r) { return r.mes === resumen.mes; });
+            var estabaPagado = false;
+            var fechaPagoVieja = null;
+            if (idxExistente >= 0) {
+              var anterior = state.resumenes[idxExistente];
+              estabaPagado = anterior.pagado === true;
+              fechaPagoVieja = anterior.fechaPago;
+              if (!confirm('Ya existe un resumen para ' + fmtMesLargo(resumen.mes) + '. ¿Reemplazarlo?')) {
+                $('#pdfInput').value = '';
+                return;
+              }
+              if (estabaPagado) {
+                resumen.pagado = anterior.pagado;
+                resumen.fechaPago = anterior.fechaPago;
+                resumen.montoPago = anterior.montoPago;
+              }
+              state.resumenes[idxExistente] = resumen;
+            } else {
+              state.resumenes.push(resumen);
+            }
+            resumenActual = resumen;
+            save();
+            render();
+            if (estabaPagado) {
+              var fechaTxt = fechaPagoVieja ? ' (pagado el ' + fmtFecha(fechaPagoVieja) + ')' : '';
+              toast('Resumen de ' + fmtMesLargo(resumen.mes) + ' reemplazado. Se mantuvo el estado PAGADO' + fechaTxt + '.');
+            } else if (idxExistente >= 0) {
+              toast('Resumen de ' + fmtMesLargo(resumen.mes) + ' reemplazado.');
+            } else {
+              toast('Resumen cargado: ' + resumen.consumos.length + ' consumos');
+            }
+          } else {
+            alert('No se pudo parsear el PDF. Asegurate de que sea un resumen de tarjeta Galicia/HSBC.');
+          }
+          $('#pdfInput').value = '';
+        });
+      }).catch(function (err) {
+        alert('Error al leer PDF: ' + err.message);
+        $('#pdfInput').value = '';
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  function parsearResumen(texto, filename) {
+    var consumos = [];
+    var lineas = texto.split('\n');
+    var fechaRegex = /^(\d{2})-(\d{2})-(\d{2})\s+(.*)$/;
+    var fechasHeader = texto.match(/(\d{2})-(\w{3})-(\d{2})/g) || [];
+    var fechaCierre = null, fechaVencimiento = null;
+    var totalMatch = texto.match(/TOTAL\s+A\s+PAGAR\s+([\d.,]+)/);
+    var totalAPagar = totalMatch ? parseFloat(totalMatch[1].replace(/\./g, '').replace(',', '.')) : null;
+    var saldoMatch = texto.match(/SALDO\s+ANTERIOR\s+([\d.,]+)/);
+    var saldoAnterior = saldoMatch ? parseFloat(saldoMatch[1].replace(/\./g, '').replace(',', '.')) : null;
+    var pagoMatch = texto.match(/SU\s+PAGO\s+EN\s+PESOS\s+(-?[\d.,]+)/);
+    var pagoAnterior = pagoMatch ? parseFloat(pagoMatch[1].replace(/\./g, '').replace(',', '.')) : null;
+    function extraerMonto(labelRegex) {
+      var m = texto.match(labelRegex);
+      return m ? parseFloat(m[1].replace(/\./g, '').replace(',', '.')) : null;
+    }
+    var impuestoSellos = extraerMonto(/IMPUESTO\s+DE\s+SELLOS[^-\d]*([\d.,]+)/i);
+    var interesesFinanciacion = extraerMonto(/INTERESES\s+FINANCIACI[OÓ]N[^-\d]*([\d.,]+)/i);
+    var punitoriosPagoMinAnterior = extraerMonto(/PUNIT[^]*?PAG\.?\s*MIN\.?\s*ANTERIOR[^]*?([\d.,]+)\s*$/m);
+    var dbIVA = extraerMonto(/DB\s+IVA[^-\d]*21%[^-\d]*([\d.,]+)/i);
+    var comisionMantCuenta = extraerMonto(/COM\s+MANT\s+CTA[^-\d]*([\d.,]+)/i);
+    var pagoMinimo = extraerMonto(/PAGO\s+M[ÍI]NIMO[^-\d]*\$?\s*([\d.,]+)/i);
+    var limite = extraerMonto(/L[ÍI]MITES[^]*?compras[^]*?\$?\s*([\d.,]+)/i);
+    var mesNum = {'Ene':'01','Feb':'02','Mar':'03','Abr':'04','May':'05','Jun':'06',
+                  'Jul':'07','Ago':'08','Sep':'09','Oct':'10','Nov':'11','Dic':'12'};
+    var cierreMatch = texto.match(/(\d{2})-(\w{3})-(\d{2})/g);
+    if (cierreMatch && cierreMatch.length >= 3) {
+      var partes = cierreMatch[2].split('-');
+      if (mesNum[partes[1]]) {
+        fechaCierre = '20' + partes[2] + '-' + mesNum[partes[1]] + '-' + partes[0];
+      }
+      if (cierreMatch[3]) {
+        var partes2 = cierreMatch[3].split('-');
+        if (mesNum[partes2[1]]) {
+          fechaVencimiento = '20' + partes2[2] + '-' + mesNum[partes2[1]] + '-' + partes2[0];
+        }
+      }
+    }
+    var mesResumen = null;
+    if (fechaCierre) {
+      mesResumen = fechaCierre.slice(0, 7);
+    }
+    lineas.forEach(function (linea) {
+      linea = linea.trim();
+      var m = linea.match(fechaRegex);
+      if (!m) return;
+      var dia = m[1], mes = m[2], anio = m[3];
+      var resto = m[4].trim();
+      if (/^(IMPUESTO|INTERESES|PUNIT|DB\s+IVA|COM\s+MANT)/i.test(resto)) return;
+      if (/^SU\s+PAGO/i.test(resto)) return;
+      if (/^TARJETA/i.test(resto)) return;
+      var importeMatch = resto.match(/(-?[\d.]+,\d{2})\s*$/);
+      if (!importeMatch) return;
+      var importeStr = importeMatch[1];
+      var importe = parseFloat(importeStr.replace(/\./g, '').replace(',', '.'));
+      var sinImporte = resto.slice(0, resto.length - importeStr.length).trim();
+      var cuotaMatch = sinImporte.match(/(\d{2}\/\d{2})/);
+      var cuota = cuotaMatch ? cuotaMatch[1] : '';
+      var compMatch = sinImporte.match(/\b(\d{6})\b\s*$/);
+      var comprobante = compMatch ? compMatch[1] : '';
+      var comercio = sinImporte
+        .replace(/^\*\s*/, '')
+        .replace(/\d{2}\/\d{2}/, '')
+        .replace(/\b\d{6}\b\s*$/, '')
+        .replace(/\b\d{10,}\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!comercio) return;
+      var fechaISO = '20' + anio + '-' + mes + '-' + dia;
+      var consumo = {
+        fecha: fechaISO,
+        comercio: comercio,
+        cuota: cuota,
+        comprobante: comprobante,
+        pesos: importe
+      };
+      if (/^(OSSACRA|CAMI\s+SALUD|K\s+MONET|MONET|RIO\s+URUGUAY|INTERNET\s+MONET)/i.test(comercio)) {
+        consumo.esDebitoFijo = true;
+      }
+      if (importe < 0) {
+        consumo.esDevolucion = true;
+      }
+      consumos.push(consumo);
+    });
+    if (!consumos.length && !totalAPagar) return null;
+    if (!mesResumen && consumos.length) {
+      var fechas = consumos.map(function (c) { return c.fecha; }).sort();
+      var ultima = fechas[fechas.length - 1];
+      var p = ultima.split('-');
+      var y = parseInt(p[0]), m = parseInt(p[1]) + 1;
+      if (m > 12) { m = 1; y++; }
+      mesResumen = y + '-' + String(m).padStart(2, '0');
+    }
+    return {
+      id: 'r' + mesResumen,
+      mes: mesResumen,
+      titular: state.titular,
+      tarjeta: state.tarjeta,
+      banco: state.banco,
+      cuenta: state.cuenta,
+      sucursal: state.sucursal,
+      fechaCierre: fechaCierre,
+      fechaVencimiento: fechaVencimiento,
+      saldoAnterior: saldoAnterior,
+      pagoAnterior: pagoAnterior,
+      totalAPagar: totalAPagar,
+      impuestoSellos: impuestoSellos,
+      interesesFinanciacion: interesesFinanciacion,
+      punitoriosPagoMinAnterior: punitoriosPagoMinAnterior,
+      dbIVA: dbIVA,
+      comisionMantCuenta: comisionMantCuenta,
+      pagoMinimo: pagoMinimo,
+      limite: limite,
+      pagado: false,
+      fechaPago: null,
+      montoPago: null,
+      consumos: consumos
+    };
+  }
+
+  /* ---------- init ---------- */
+  $('#cFecha').value = todayISO();
+  cargarEstadoDesdeNube();
+})();
+</script>
+</body>
+</html>
